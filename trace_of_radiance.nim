@@ -48,10 +48,12 @@ proc main() =
                  samples_per_pixel,
                  gamma_correction
                )
+  defer: canvas.delete()
 
   canvas.render(cam, world.list(), max_depth)
 
   stdout.exportToPPM canvas
   stderr.write "\nDone.\n"
+
 
 main()
