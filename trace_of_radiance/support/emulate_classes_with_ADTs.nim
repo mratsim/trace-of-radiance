@@ -77,7 +77,7 @@ macro registerRoutine*(className, routine: untyped) =
   ##     scatter(self: Material, r_in: Ray, rec: HitRecord): Option[color: attenuation, scattered: Ray]
   ClassRegistry[className].routines.add routine
 
-proc exported(name: string): NimNode =
+func exported(name: string): NimNode =
   nnkPostfix.newTree(
     newIdentNode"*",
     newIdentNode name
@@ -152,8 +152,8 @@ macro generateClass*(className, constructorName: untyped) =
   # Debug display
   # echo result.toStrLit()
 
-proc replaceNode(ast, toReplace, replaceBy: NimNode): NimNode =
-  proc inspect(node: NimNode): NimNode =
+func replaceNode(ast, toReplace, replaceBy: NimNode): NimNode =
+  func inspect(node: NimNode): NimNode =
     case node.kind:
     of {nnkIdent, nnkSym}:
       if node.eqIdent(toReplace):

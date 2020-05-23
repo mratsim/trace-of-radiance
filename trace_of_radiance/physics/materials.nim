@@ -21,7 +21,7 @@ import
 func lambertian*(albedo: Attenuation): Lambertian {.inline.} =
   result.albedo = albedo
 
-proc scatter(self: Lambertian, r_in: Ray,
+func scatter(self: Lambertian, r_in: Ray,
               rec: HitRecord, rng: var Rng,
               attenuation: var Attenuation, scattered: var Ray): bool =
   let scatter_direction = rec.normal + rng.random(UnitVector)
@@ -36,7 +36,7 @@ func metal*(albedo: Attenuation, fuzz: float64): Metal {.inline.} =
   result.albedo = albedo
   result.fuzz = min(fuzz, 1)
 
-proc scatter(self: Metal, r_in: Ray,
+func scatter(self: Metal, r_in: Ray,
               rec: HitRecord, rng: var Rng,
               attenuation: var Attenuation, scattered: var Ray): bool =
   let reflected = r_in.direction.unit_vector().reflect(rec.normal)
@@ -59,7 +59,7 @@ func schlick(cosine, refraction_index: float64): float64 =
   r0 *= r0
   return r0 + (1-r0)*pow(1-cosine, 5)
 
-proc scatter(self: Dielectric, r_in: Ray,
+func scatter(self: Dielectric, r_in: Ray,
               rec: HitRecord, rng: var Rng,
               attenuation: var Attenuation, scattered: var Ray): bool =
   attenuation = attenuation(1, 1, 1)
@@ -89,7 +89,7 @@ proc scatter(self: Dielectric, r_in: Ray,
 # ------------------------------------------------------------------------------------------
 
 registerRoutine(Material):
-  proc scatter*(self: Material, r_in: Ray, rec: HitRecord,
+  func scatter*(self: Material, r_in: Ray, rec: HitRecord,
                 rng: var Rng,
                 attenuation: var Attenuation, scattered: var Ray): bool
 
