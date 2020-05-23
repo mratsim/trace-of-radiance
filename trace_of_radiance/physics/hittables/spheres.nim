@@ -34,15 +34,18 @@ func hit*(self: Sphere, r: Ray, t_min, t_max: float64, rec: var HitRecord): bool
 
   if discriminant > 0:
     let root = discriminant.sqrt()
-    for sol in [(-half_b - root)/a, (-half_b + root)/a]:
-      if t_min < sol and sol < t_max:
-
-        rec.t = sol
-        rec.p = r.at(rec.t)
-        let outward_normal = (rec.p - self.center) / self.radius
-        rec.set_face_normal(r, outward_normal)
-        rec.material = self.material
-        return true
+    template checkSol(root: untyped): untyped {.dirty.} =
+      block:
+        let sol = root
+        if t_min < sol and sol < t_max:
+          rec.t = sol
+          rec.p = r.at(rec.t)
+          let outward_normal = (rec.p - self.center) / self.radius
+          rec.set_face_normal(r, outward_normal)
+          rec.material = self.material
+          return true
+    checkSol((-half_b - root)/a)
+    checkSol((-half_b + root)/a)
   return false
 
 # Sanity checks
