@@ -5,7 +5,9 @@
 #   * Apache v2 license (license terms in the root directory or at http://www.apache.org/licenses/LICENSE-2.0).
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
-import std/math
+import
+  std/math,
+  ../support/errors
 
 type
   Vec3* = object
@@ -33,7 +35,7 @@ converter toVec3*(uv: UnitVector): Vec3 {.inline.} =
 
 template toUV*(v: Vec3): UnitVector =
   ## In debug mode we check conversion
-  assert 1 - v.length_squared < 1e-5
+  ensureWithinRelTol(v.length_squared(), 1.0)
   UnitVector(v)
 
 # Init
