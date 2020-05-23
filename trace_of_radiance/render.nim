@@ -7,7 +7,9 @@
 
 import
   # Standard library
-  std/strformat,
+
+  # 3rd party
+  weave,
   # Internal
   ./primitives,
   ./sampling,
@@ -46,14 +48,24 @@ func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
   return color(0, 0, 0)
 
 proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: int) =
-  for row in 0'i32 ..< canvas.nrows:
-    for col in 0'i32 ..< canvas.ncols:
+  init(Weave)
+
+  let canvas = canvas.addr # Mutable
+  let cam = cam.unsafeAddr # Too big for capture
+
+  parallelFor row in 0 ..< canvas.nrows:
+    captures: {canvas, cam, world, max_depth}
+    parallelFor col in 0 ..< canvas.ncols:
+      captures: {row, canvas, cam, world, max_depth}
       var rng: Rng   # We reseed per pixel to be able to parallelize the outer loops
       rng.seed(row, col) # And use a "perfect hash" as the seed
       var pixel = color(0, 0, 0)
       for _ in 0 ..< canvas.samples_per_pixel:
+        loadBalance(Weave)
         let u = (col.float64 + rng.random(float64)) / float64(canvas.ncols - 1)
         let v = (row.float64 + rng.random(float64)) / float64(canvas.nrows - 1)
-        let r = cam.ray(u, v, rng)
+        let r = cam[].ray(u, v, rng)
         pixel += radiance(r, world, max_depth, rng)
-      canvas.draw(row, col, pixel)
+      canvas[].draw(row, col, pixel)
+
+  exit(Weave)

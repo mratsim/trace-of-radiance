@@ -44,7 +44,7 @@ proc delete*(canvas: var Canvas) {.inline.} =
   if not canvas.pixels.isNil:
     c_free(canvas.pixels)
 
-func draw*(canvas: var Canvas, row, col: int32, pixel: Color) {.inline.} =
+func draw*(canvas: var Canvas, row, col: SomeInteger, pixel: Color) {.inline.} =
   # Draw a gamma-corrected pixel in the canvas
   let scale = 1.0 / canvas.samples_per_pixel.float64
   let gamma = 1.0 / canvas.gamma_correction.float64
@@ -53,5 +53,5 @@ func draw*(canvas: var Canvas, row, col: int32, pixel: Color) {.inline.} =
   canvas.pixels[pos].y = pow(scale * pixel.y, gamma)
   canvas.pixels[pos].z = pow(scale * pixel.z, gamma)
 
-proc `[]`*(canvas: Canvas, row, col: int32): Color {.inline.} =
+proc `[]`*(canvas: Canvas, row, col: SomeInteger): Color {.inline.} =
   canvas.pixels[row*canvas.ncols + col]

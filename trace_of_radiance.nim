@@ -6,8 +6,6 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  # Stdlib
-  std/strformat,
   # Internals
   ./trace_of_radiance/[
     primitives,
