@@ -6,7 +6,9 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  # Standard library
   std/strformat,
+  # Internal
   ./primitives,
   ./sampling,
   ./io/ppm,
@@ -45,8 +47,6 @@ func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
 
 proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: int) =
   for row in 0'i32 ..< canvas.nrows:
-    stderr.write &"\rScanlines remaining: {canvas.nrows - row}"
-    stderr.flushFile()
     for col in 0'i32 ..< canvas.ncols:
       var rng: Rng   # We reseed per pixel to be able to parallelize the outer loops
       rng.seed(row, col) # And use a "perfect hash" as the seed

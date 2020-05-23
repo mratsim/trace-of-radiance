@@ -12,6 +12,7 @@ import
   ./trace_of_radiance/[
     primitives,
     physics/cameras,
+    physics/hittables,
     render,
     scenes,
     sampling,
@@ -50,7 +51,7 @@ proc main() =
                  gamma_correction
                )
 
-  canvas.render(cam, world, max_depth)
+  canvas.render(cam, world.list(), max_depth)
 
   stdout.exportToPPM canvas
   stderr.write "\nDone.\n"
