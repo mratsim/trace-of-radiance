@@ -7,9 +7,11 @@
 
 import primitives/[
   safe_math, rays,
-  vec3s, point3s, colors
+  vec3s, point3s, colors,
+  canvas
 ]
 
 export
   safe_math, rays,
-  vec3s, point3s, colors
+  vec3s, point3s, colors,
+  canvas

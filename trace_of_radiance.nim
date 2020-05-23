@@ -14,7 +14,8 @@ import
     physics/cameras,
     render,
     scenes,
-    sampling
+    sampling,
+    io/ppm
   ]
 
 proc main() =
@@ -22,9 +23,8 @@ proc main() =
   const image_width = 384
   const image_height = int(image_width / aspect_ratio)
   const samples_per_pixel = 100
+  const gamma_correction = 2.2
   const max_depth = 50
-
-  stdout.write &"P3\n{image_width} {image_height}\n255\n"
 
   var worldRNG: Rng
   worldRNG.seed 0xFACADE
@@ -44,12 +44,15 @@ proc main() =
               aspect_ratio, aperture, dist_to_focus
             )
 
-  stdout.renderToPPM(
-    cam, world,
-    image_height, image_width,
-    samples_per_pixel, max_depth
-  )
+  var canvas = newCanvas(
+                 image_height, image_width,
+                 samples_per_pixel,
+                 gamma_correction
+               )
 
+  canvas.render(cam, world, max_depth)
+
+  stdout.exportToPPM canvas
   stderr.write "\nDone.\n"
 
 main()

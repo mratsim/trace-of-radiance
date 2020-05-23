@@ -11,20 +11,17 @@ import
   # internal
   ../primitives
 
-proc write*(f: File, pixelColor: Color, samples_per_pixel: int) =
-  var r = pixelColor.x
-  var g = pixelColor.y
-  var b = pixelColor.z
-
-  # Divide the color total by the number of samples
-  # We also do gamma correction for gamma = 2, i.e. pixel^(1/2)
-  let scale = 1.0 / float64(samples_per_pixel)
-  r = sqrt(scale * r)
-  g = sqrt(scale * g)
-  b = sqrt(scale * b)
-
+proc exportToPPM*(f: File, canvas: Canvas) =
   template conv(c: float64): int =
     int(256 * clamp(c, 0.0, 0.999))
 
-  # Write the translated [0, 255] value of each color component
-  f.write &"{conv(r)} {conv(g)} {conv(b)}\n"
+  stdout.write &"P3\n{canvas.ncols} {canvas.nrows}\n255\n"
+
+  for i in countdown(canvas.nrows-1,0):
+    for j in 0 ..< canvas.ncols:
+      # Write the translated [0, 255] value of each color component
+      let pixel = canvas[i, j]
+      let r = pixel.x
+      let g = pixel.y
+      let b = pixel.z
+      f.write &"{conv(r)} {conv(g)} {conv(b)}\n"

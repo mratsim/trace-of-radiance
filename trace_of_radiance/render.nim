@@ -43,18 +43,17 @@ func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
 
   return color(0, 0, 0)
 
-proc renderToPPM*(output: File, cam: Camera, world: HittableList,
-                  image_height, image_width, samples_per_pixel, max_depth: int) =
-  for j in countdown(image_height-1, 0):
-    stderr.write &"\rScanlines remaining: {j} "
+proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: int) =
+  for row in 0'i32 ..< canvas.nrows:
+    stderr.write &"\rScanlines remaining: {canvas.nrows - row}"
     stderr.flushFile()
-    for i in 0 ..< image_width:
+    for col in 0'i32 ..< canvas.ncols:
       var rng: Rng   # We reseed per pixel to be able to parallelize the outer loops
-      rng.seed(j, i) # And use a "perfect hash" as the seed
+      rng.seed(row, col) # And use a "perfect hash" as the seed
       var pixel = color(0, 0, 0)
-      for s in 0 ..< samples_per_pixel:
-        let u = (i.float64 + rng.random(float64)) / float64(image_width - 1)
-        let v = (j.float64 + rng.random(float64)) / float64(image_height - 1)
+      for _ in 0 ..< canvas.samples_per_pixel:
+        let u = (col.float64 + rng.random(float64)) / float64(canvas.ncols - 1)
+        let v = (row.float64 + rng.random(float64)) / float64(canvas.nrows - 1)
         let r = cam.ray(u, v, rng)
         pixel += radiance(r, world, max_depth, rng)
-      output.write(pixel, samples_per_pixel)
+      canvas.draw(row, col, pixel)
