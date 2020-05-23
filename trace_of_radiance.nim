@@ -13,7 +13,8 @@ import
     primitives,
     physics/cameras,
     render,
-    scenes
+    scenes,
+    sampling
   ]
 
 proc main() =
@@ -25,7 +26,9 @@ proc main() =
 
   stdout.write &"P3\n{image_width} {image_height}\n255\n"
 
-  let world = random_scene()
+  var worldRNG: Rng
+  worldRNG.seed 0xFACADE
+  let world = worldRNG.random_scene()
 
   let
     lookFrom = point3(13,2,3)

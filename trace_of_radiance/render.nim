@@ -15,7 +15,7 @@ import
 # Rendering routines
 # ------------------------------------------------------------------------
 
-proc radiance*(ray: Ray, world: Hittable, max_depth: int): Color =
+func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
   var attenuation = attenuation(1.0, 1.0, 1.0)
   var ray = ray
 
@@ -26,7 +26,7 @@ proc radiance*(ray: Ray, world: Hittable, max_depth: int): Color =
     if maybeRec:
       var materialAttenuation: Attenuation
       var scattered: Ray
-      let maybeScatter = rec.material.scatter(ray, rec, materialAttenuation, scattered)
+      let maybeScatter = rec.material.scatter(ray, rec, rng, materialAttenuation, scattered)
       # Bounce on surface
       if maybeScatter:
         attenuation *= materialAttenuation
@@ -49,10 +49,12 @@ proc renderToPPM*(output: File, cam: Camera, world: HittableList,
     stderr.write &"\rScanlines remaining: {j} "
     stderr.flushFile()
     for i in 0 ..< image_width:
+      var rng: Rng   # We reseed per pixel to be able to parallelize the outer loops
+      rng.seed(j, i) # And use a "perfect hash" as the seed
       var pixel = color(0, 0, 0)
       for s in 0 ..< samples_per_pixel:
-        let u = (i.float64 + float64.random()) / float64(image_width - 1)
-        let v = (j.float64 + float64.random()) / float64(image_height - 1)
-        let r = cam.ray(u, v)
-        pixel += radiance(r, world, max_depth)
+        let u = (i.float64 + rng.random(float64)) / float64(image_width - 1)
+        let v = (j.float64 + rng.random(float64)) / float64(image_height - 1)
+        let r = cam.ray(u, v, rng)
+        pixel += radiance(r, world, max_depth, rng)
       output.write(pixel, samples_per_pixel)
