@@ -126,13 +126,7 @@ func uniform*(rng: var Rng, minIncl, maxExcl: float64): float64 =
     debiaised * (maxExcl - minIncl) + minIncl
   )
 
-func uniform*(rng*: var float64, _: type float64): float64 =
-  let mantissa = rng.next() shr (F64_Bits - F64_MantissaBits)
-  let fl = mantissa or cast[uint64](1'f64)
-  # Debiaised by removing 1
-  return cast[float64](fl) - 1'f64
-
-func uniform*(rng*: var float64, _: type float64): float64 =
+func uniform*(rng: var Rng, _: type float64): float64 =
   let mantissa = rng.next() shr (F64_Bits - F64_MantissaBits)
   let fl = mantissa or cast[uint64](1'f64)
   # Debiaised by removing 1

@@ -40,8 +40,8 @@ func camera*(lookFrom, lookAt: Point3, view_up: Vec3,
                              result.vertical/2 - focus_distance*result.w
   result.lens_radius = aperture/2
 
-proc ray*(self: Camera, s, t: float64): Ray =
-  let rd = self.lens_radius * random_in_unit_disk()
+proc ray*(self: Camera, s, t: float64, rng: var Rng): Ray =
+  let rd = self.lens_radius * rng.random_in_unit_disk(Vec3)
   let offset = self.u*rd.x + self.v*rd.y
   ray(
     origin = self.origin + offset,

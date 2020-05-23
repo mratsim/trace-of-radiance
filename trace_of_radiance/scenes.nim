@@ -10,17 +10,17 @@ import
   ./sampling,
   ./primitives
 
-proc random_scene*(): HittableList =
+proc random_scene*(rng: var Rng): HittableList =
   let ground_material = lambertian attenuation(0.5,0.5,0.5)
   result.add sphere(center = point3(0,-1000,0), 1000, ground_material)
 
   for a in -11 ..< 11:
     for b in -11 ..< 11:
-      let choose_mat = float64.random()
+      let choose_mat = rng.random(float64)
       let center = point3(
-        a.float64 + 0.9*float64.random(),
+        a.float64 + 0.9*rng.random(float64),
         0.2,
-        b.float64 + 0.9*float64.random()
+        b.float64 + 0.9*rng.random(float64)
       )
 
       # In the book it's vec3(4, 0.2, 0) but it doesn't make physical sense
@@ -29,13 +29,13 @@ proc random_scene*(): HittableList =
       if length(center - point3(4, 0.2, 0)) > 0.9:
         if choose_mat < 0.8:
           # Diffuse
-          let albedo = Attenuation.random() * Attenuation.random()
+          let albedo = rng.random(Attenuation) * rng.random(Attenuation)
           let sphere_material = lambertian albedo
           result.add sphere(center, 0.2, sphere_material)
         elif choose_mat < 0.95:
           # Metal
-          let albedo = Attenuation.random(0.5, 1)
-          let fuzz = float64.random(0.0, 0.5)
+          let albedo = rng.random(Attenuation, 0.5, 1)
+          let fuzz = rng.random(float64, max = 0.5)
           let sphere_material = metal(albedo, fuzz)
           result.add sphere(center, 0.2, sphere_material)
         else:

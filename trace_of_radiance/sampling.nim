@@ -6,67 +6,81 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  std/[random, math],
-  ./primitives
+  std/math,
+  ./primitives,
+  ./support/rng
+
+export rng
 
 # Random routines
 # ------------------------------------------------------
 
-var globalRng = initRand(0xFACADE) # TODO: init per thread
+proc random*(rng: var Rng, _: type float64): float64 {.inline.} =
+  rng.uniform(float64)
 
-proc random*(_: type float64): float64 =
-  globalRng.rand(1.0)
+proc random*(rng: var Rng, _: type float64, max: float64): float64 {.inline.} =
+  rng.uniform(max)
 
-proc random*(_: type float64, min, max: float64): float64 =
-  globalRng.rand(min..max)
+proc random*(rng: var Rng, _: type float64, min, max: float64): float64 {.inline.} =
+  rng.uniform(min, max)
 
 # Vector
 # ------------------------------------------------------
 
-proc random(_: type Vec3): Vec3 =
-  result.x = float64.random()
-  result.y = float64.random()
-  result.z = float64.random()
+proc random(rng: var Rng, _: type Vec3): Vec3 {.inline.} =
+  result.x = rng.random(float64)
+  result.y = rng.random(float64)
+  result.z = rng.random(float64)
 
-proc random(_: type Vec3, min, max: float64): Vec3 =
-  result.x = globalRng.rand(min..max)
-  result.y = globalRng.rand(min..max)
-  result.z = globalRng.rand(min..max)
+proc random(rng: var Rng, _: type Vec3, max: float64): Vec3 {.inline.} =
+  result.x = rng.random(float64, max)
+  result.y = rng.random(float64, max)
+  result.z = rng.random(float64, max)
 
-proc random_in_unit_sphere*(_: type Vec3): Vec3 =
+proc random(rng: var Rng,  _: type Vec3, min, max: float64): Vec3 {.inline.} =
+  result.x = rng.random(float64, min, max)
+  result.y = rng.random(float64, min, max)
+  result.z = rng.random(float64, min, max)
+
+proc random_in_unit_sphere*(rng: var Rng, _: type Vec3): Vec3 =
   while true:
-    let p = Vec3.random(-1, 1)
+    let p = rng.random(Vec3, -1, 1)
     if p.length_squared() < 1.0:
       return p
 
-proc random_unit_vector*(): Vec3 =
-  let a = globalRng.rand(0.0 .. 2*PI)
-  let z = globalRng.rand(-1.0 .. 1.0)
+proc random*(rng: var Rng, _: type UnitVector): UnitVector =
+  let a = rng.random(float64, 2*PI)
+  let z = rng.random(float64, -1.0, 1.0)
   let r = sqrt(1.0 - z*z)
-  return vec3(r*cos(a), r*sin(a), z)
+  return toUV(vec3(r*cos(a), r*sin(a), z))
 
-proc random_in_hemisphere*(normal: Vec3): Vec3 =
-  let in_unit_sphere = Vec3.random_in_unit_sphere()
+proc random_in_hemisphere*(rng: var Rng, _: type Vec3, normal: Vec3): Vec3 =
+  let in_unit_sphere = rng.random_in_unit_sphere(Vec3)
   if in_unit_sphere.dot(normal) > 0.0: # In the same hemisphere as normal
     return in_unit_sphere
   else:
     return -in_unit_sphere
 
-proc random_in_unit_disk*(): Vec3 =
+proc random_in_unit_disk*(rng: var Rng, _: type Vec3): Vec3 =
   while true:
-    result = vec3(globalRng.rand(-1.0..1.0), globalRng.rand(-1.0..1.0), 0)
+    result = vec3(rng.random(float64, -1.0, 1.0), rng.random(float64, -1.0, 1.0), 0)
     if result.length_squared() < 1:
       return
 
 # Color
 # ------------------------------------------------------
 
-proc random*(_: type Attenuation): Attenuation =
-  result.x = float64.random()
-  result.y = float64.random()
-  result.z = float64.random()
+proc random*(rng: var Rng, _: type Attenuation): Attenuation {.inline.} =
+  result.x = rng.random(float64)
+  result.y = rng.random(float64)
+  result.z = rng.random(float64)
 
-proc random*(_: type Attenuation, min, max: float64): Attenuation =
-  result.x = globalRng.rand(min..max)
-  result.y = globalRng.rand(min..max)
-  result.z = globalRng.rand(min..max)
+proc random*(rng: var Rng, _: type Attenuation, max: float64): Attenuation {.inline.} =
+  result.x = rng.random(float64, max)
+  result.y = rng.random(float64, max)
+  result.z = rng.random(float64, max)
+
+proc random*(rng: var Rng, _: type Attenuation, min, max: float64): Attenuation {.inline.} =
+  result.x = rng.random(float64, min, max)
+  result.y = rng.random(float64, min, max)
+  result.z = rng.random(float64, min, max)

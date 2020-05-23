@@ -22,8 +22,9 @@ func lambertian*(albedo: Attenuation): Lambertian {.inline.} =
   result.albedo = albedo
 
 proc scatter(self: Lambertian, r_in: Ray,
-              rec: HitRecord, attenuation: var Attenuation, scattered: var Ray): bool =
-  let scatter_direction = rec.normal + random_unit_vector()
+              rec: HitRecord, rng: var Rng,
+              attenuation: var Attenuation, scattered: var Ray): bool =
+  let scatter_direction = rec.normal + rng.random(UnitVector)
   scattered = ray(rec.p, scatter_direction)
   attenuation = self.albedo
   return true
@@ -36,9 +37,10 @@ func metal*(albedo: Attenuation, fuzz: float64): Metal {.inline.} =
   result.fuzz = min(fuzz, 1)
 
 proc scatter(self: Metal, r_in: Ray,
-              rec: HitRecord, attenuation: var Attenuation, scattered: var Ray): bool =
+              rec: HitRecord, rng: var Rng,
+              attenuation: var Attenuation, scattered: var Ray): bool =
   let reflected = r_in.direction.unit_vector().reflect(rec.normal)
-  scattered = ray(rec.p, reflected + self.fuzz * Vec3.random_in_unit_sphere())
+  scattered = ray(rec.p, reflected + self.fuzz * rng.random_in_unit_sphere(Vec3))
   if scattered.direction.dot(rec.normal) > 0:
     attenuation = self.albedo
     return true
@@ -58,7 +60,8 @@ func schlick(cosine, refraction_index: float64): float64 =
   return r0 + (1-r0)*pow(1-cosine, 5)
 
 proc scatter(self: Dielectric, r_in: Ray,
-              rec: HitRecord, attenuation: var Attenuation, scattered: var Ray): bool =
+              rec: HitRecord, rng: var Rng,
+              attenuation: var Attenuation, scattered: var Ray): bool =
   attenuation = attenuation(1, 1, 1)
   let etaI_over_etaT = if rec.front_face: 1.0 / self.refraction_index
                        else: self.refraction_index
@@ -73,7 +76,7 @@ proc scatter(self: Dielectric, r_in: Ray,
     return true
 
   let reflect_prob = schlick(cos_theta, etaI_over_etaT)
-  if float64.random() < reflect_prob:
+  if rng.random(float64) < reflect_prob:
     let reflected = unit_direction.reflect(rec.normal)
     scattered = ray(rec.p, reflected)
     return true
@@ -87,6 +90,7 @@ proc scatter(self: Dielectric, r_in: Ray,
 
 registerRoutine(Material):
   proc scatter*(self: Material, r_in: Ray, rec: HitRecord,
+                rng: var Rng,
                 attenuation: var Attenuation, scattered: var Ray): bool
 
 generateRoutines(Material)
