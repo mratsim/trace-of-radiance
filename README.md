@@ -64,6 +64,10 @@ Compiled in x86-64 mode (SSE2 only)
 
 384x216 image, 100 rays per pixel
 
+The Nim sources for this benchmark can be retrived from the first release:
+
+    https://github.com/mratsim/trace-of-radiance/tree/v0.1.0
+
 ### Smallpt
 
 [SmallPT](https://www.kevinbeason.com/smallpt/) is an even smaller raytracing project
