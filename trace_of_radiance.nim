@@ -6,15 +6,15 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  # Stdlib
-  std/strformat,
   # Internals
   ./trace_of_radiance/[
     primitives,
     physics/cameras,
+    physics/hittables,
     render,
     scenes,
-    sampling
+    sampling,
+    io/ppm
   ]
 
 proc main() =
@@ -22,9 +22,8 @@ proc main() =
   const image_width = 384
   const image_height = int(image_width / aspect_ratio)
   const samples_per_pixel = 100
+  const gamma_correction = 2.2
   const max_depth = 50
-
-  stdout.write &"P3\n{image_width} {image_height}\n255\n"
 
   var worldRNG: Rng
   worldRNG.seed 0xFACADE
@@ -44,12 +43,17 @@ proc main() =
               aspect_ratio, aperture, dist_to_focus
             )
 
-  stdout.renderToPPM(
-    cam, world,
-    image_height, image_width,
-    samples_per_pixel, max_depth
-  )
+  var canvas = newCanvas(
+                 image_height, image_width,
+                 samples_per_pixel,
+                 gamma_correction
+               )
+  defer: canvas.delete()
 
+  canvas.render(cam, world.list(), max_depth)
+
+  stdout.exportToPPM canvas
   stderr.write "\nDone.\n"
+
 
 main()

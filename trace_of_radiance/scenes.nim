@@ -10,7 +10,7 @@ import
   ./sampling,
   ./primitives
 
-func random_scene*(rng: var Rng): HittableList =
+func random_scene*(rng: var Rng): Scene =
   let ground_material = lambertian attenuation(0.5,0.5,0.5)
   result.add sphere(center = point3(0,-1000,0), 1000, ground_material)
 

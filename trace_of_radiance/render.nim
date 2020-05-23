@@ -6,7 +6,11 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  std/strformat,
+  # Standard library
+
+  # 3rd party
+  weave,
+  # Internal
   ./primitives,
   ./sampling,
   ./io/ppm,
@@ -43,18 +47,25 @@ func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
 
   return color(0, 0, 0)
 
-proc renderToPPM*(output: File, cam: Camera, world: HittableList,
-                  image_height, image_width, samples_per_pixel, max_depth: int) =
-  for j in countdown(image_height-1, 0):
-    stderr.write &"\rScanlines remaining: {j} "
-    stderr.flushFile()
-    for i in 0 ..< image_width:
+proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: int) =
+  init(Weave)
+
+  let canvas = canvas.addr # Mutable
+  let cam = cam.unsafeAddr # Too big for capture
+
+  parallelFor row in 0 ..< canvas.nrows:
+    captures: {canvas, cam, world, max_depth}
+    parallelFor col in 0 ..< canvas.ncols:
+      captures: {row, canvas, cam, world, max_depth}
       var rng: Rng   # We reseed per pixel to be able to parallelize the outer loops
-      rng.seed(j, i) # And use a "perfect hash" as the seed
+      rng.seed(row, col) # And use a "perfect hash" as the seed
       var pixel = color(0, 0, 0)
-      for s in 0 ..< samples_per_pixel:
-        let u = (i.float64 + rng.random(float64)) / float64(image_width - 1)
-        let v = (j.float64 + rng.random(float64)) / float64(image_height - 1)
-        let r = cam.ray(u, v, rng)
+      for _ in 0 ..< canvas.samples_per_pixel:
+        loadBalance(Weave)
+        let u = (col.float64 + rng.random(float64)) / float64(canvas.ncols - 1)
+        let v = (row.float64 + rng.random(float64)) / float64(canvas.nrows - 1)
+        let r = cam[].ray(u, v, rng)
         pixel += radiance(r, world, max_depth, rng)
-      output.write(pixel, samples_per_pixel)
+      canvas[].draw(row, col, pixel)
+
+  exit(Weave)
