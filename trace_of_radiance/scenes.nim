@@ -16,17 +16,15 @@ func random_scene*(rng: var Rng): Scene =
 
   for a in -11 ..< 11:
     for b in -11 ..< 11:
-      let choose_mat = rng.random(float64)
       let center = point3(
         a.float64 + 0.9*rng.random(float64),
         0.2,
         b.float64 + 0.9*rng.random(float64)
       )
 
-      # In the book it's vec3(4, 0.2, 0) but it doesn't make physical sense
-      # as center is a point, substracting a vector gives a point
-      # length of a point ??unless it is meant distance from the origin (0,0,0)
       if length(center - point3(4, 0.2, 0)) > 0.9:
+        let choose_mat = rng.random(float64)
+
         if choose_mat < 0.8:
           # Diffuse
           let albedo = rng.random(Attenuation) * rng.random(Attenuation)

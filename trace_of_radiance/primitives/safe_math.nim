@@ -33,3 +33,7 @@ template radToDeg*(rad: Radians): Degrees =
 # and auto-convert to float
 converter toF64*(rad: Radians): float64 {.inline.} =
   float64 rad
+
+func `-=`*(a: var Radians, b: Radians) {.inline.} =
+  # workaround https://github.com/nim-lang/Nim/issues/14440
+  cast[var float64](a.addr) -= b.float64
