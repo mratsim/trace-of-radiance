@@ -7,7 +7,7 @@
 
 import
   # Standard library
-  std/[os, strutils, strformat, monotimes],
+  std/[os, strformat, monotimes],
   # 3rd party
   weave,
   # Internals
@@ -62,7 +62,7 @@ proc main() =
   canvas.render(cam, world.list(), max_depth)
   exit(Weave)
 
-  stdout.exportToPPM canvas
+  canvas.exportToPPM stdout
   stderr.write "\nDone.\n"
 
 proc main_animation() =
@@ -79,6 +79,10 @@ proc main_animation() =
     t_max = 2.0
     skip = 6 # Render every 6 physics update
 
+  const
+    destDir = "build"/"rendered"
+    series = "animation"
+
   var worldRNG: Rng
   worldRNG.seed 0xFACADE
 
@@ -93,7 +97,7 @@ proc main_animation() =
                )
   defer: canvas.delete()
 
-  createDir("build"/"rendered")
+  createDir(destDir)
 
   let totalScenes = int((t_max - t_min)/(dt*skip))
   stderr.write &"Total scenes: {totalScenes}"
@@ -110,14 +114,9 @@ proc main_animation() =
     let start = getMonoTime()
     canvas.render(camera, scene.list(), maxdepth)
     syncRoot(Weave)
-    let image = open(
-      "build"/"rendered"/"animation_" &
-        intToStr(sceneID, minchars = 5) & ".ppm",
-      fmWrite
-    )
-    image.exportToPPM canvas
 
-    image.close()
+    canvas.exportToPPM destDir, series, sceneID
+
     inc sceneID
     elapsed = getMonoTime() - start
 
