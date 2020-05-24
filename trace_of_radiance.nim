@@ -6,6 +6,10 @@
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  # Standard library
+  std/[os, strutils, strformat, monotimes],
+  # 3rd party
+  weave,
   # Internals
   ./trace_of_radiance/[
     primitives,
@@ -15,7 +19,11 @@ import
     scenes,
     sampling,
     io/ppm
-  ]
+  ],
+  # Extra
+  ./trace_of_radiance/scenes_animated
+
+import times except Time
 
 proc main() =
   const aspect_ratio = 16.0 / 9.0
@@ -50,10 +58,70 @@ proc main() =
                )
   defer: canvas.delete()
 
+  init(Weave)
   canvas.render(cam, world.list(), max_depth)
+  exit(Weave)
 
   stdout.exportToPPM canvas
   stderr.write "\nDone.\n"
 
+proc main_animation() =
+  const aspect_ratio = 16.0 / 9.0
+  const image_width = 384
+  const image_height = int32(image_width / aspect_ratio)
+  const samples_per_pixel = 100
+  const gamma_correction = 2.2
+  const max_depth = 50
 
-main()
+  const
+    dt = 0.005
+    t_min = 0.0
+    t_max = 2.0
+    skip = 6 # Render every 6 physics update
+
+  var worldRNG: Rng
+  worldRNG.seed 0xFACADE
+
+  var animation = worldRNG.random_moving_spheres(
+    image_height, image_width, dt.Time, t_min.Time, t_max.Time
+  )
+
+  var canvas = newCanvas(
+                 image_height, image_width,
+                 samples_per_pixel,
+                 gamma_correction
+               )
+  defer: canvas.delete()
+
+  createDir("build"/"rendered")
+
+  let totalScenes = int((t_max - t_min)/(dt*skip))
+  stderr.write &"Total scenes: {totalScenes}"
+
+  init(Weave)
+  var sceneID = 0
+  var elapsed: Duration
+  for camera, scene in scenes(animation, skip = 6):
+    let remaining = totalScenes-sceneID
+    let timeSpent = inSeconds(elapsed)
+    let timeLeft = remaining * timeSpent
+    stderr.write &"\rScenes remaining: {remaining:>5}, {timeSpent:>2} seconds/scene, estimated time left {timeLeft:>4} seconds"
+    stderr.flushFile()
+    let start = getMonoTime()
+    canvas.render(camera, scene.list(), maxdepth)
+    syncRoot(Weave)
+    let image = open(
+      "build"/"rendered"/"animation_" &
+        intToStr(sceneID, minchars = 5) & ".ppm",
+      fmWrite
+    )
+    image.exportToPPM canvas
+
+    image.close()
+    inc sceneID
+    elapsed = getMonoTime() - start
+
+  exit(Weave)
+
+# main()
+main_animation()

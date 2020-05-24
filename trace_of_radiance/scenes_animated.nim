@@ -31,7 +31,7 @@ type
   Mass = distinct float32
   Velocity = distinct float64
   Distance = distinct float64
-  Time = distinct float32
+  Time* = distinct float32
   Acceleration = distinct float64
 
   MovingSphere = object
@@ -65,17 +65,16 @@ const
   SmallRadius = 0.2
   G = 9.80665.Acceleration # Gravity
 
-template `+=`(a: var Distance, b: Distance) =
-  # workaround https://github.com/nim-lang/Nim/issues/14440
+# workarounds https://github.com/nim-lang/Nim/issues/14440
+# so ugly ...
+func `+=`(a: var Distance, b: Distance) {.inline.}=
+  cast[var float64](a.addr) += b.float64
+func `-=`(a: var Velocity, b: Velocity) {.inline.}=
   cast[var float64](a.addr) -= b.float64
-template `-=`(a: var Velocity, b: Velocity) =
-  # workaround https://github.com/nim-lang/Nim/issues/14440
-  cast[var float64](a.addr) -= b.float64
-template `+=`(a: var Time, b: Time) =
-  # workaround https://github.com/nim-lang/Nim/issues/14440
-  cast[var float64](a.addr) -= b.float64
+
+func `+=`(a: var Time, b: Time) {.inline.}=
+  cast[var float32](a.addr) += b.float32
 template `<`(a, b: Time): bool =
-  # workaround https://github.com/nim-lang/Nim/issues/14440
   a.float32 < b.float32
 
 template `*`(accel: Acceleration, dt: Time): Velocity =
@@ -160,17 +159,18 @@ func stepPhysics(self: var Animation) =
     if movingSphere.velocity.float64 < 0.0 and
          movingSphere.pos_y.float64 < SmallRadius:
       # Sphere is descending and hit the ground
-      movingSphere.velocity -= movingSphere.coef_restitution * movingSphere.velocity # bounce
+      movingSphere.velocity = -movingSphere.coef_restitution * movingSphere.velocity # bounce
     else:
       movingSphere.velocity -= G * self.dt # Fundamental Principle of Dynamics
+
     moving_sphere.pos_y += moving_sphere.velocity * self.dt
+    assert moving_sphere.pos_y.float64 >= 0.0
 
 func step(self: var Animation) =
   self.stepCamera()
   self.stepPhysics()
 
-
-iterator items(anim: var Animation): tuple[cam: Camera, scene: Scene] =
+iterator scenes*(anim: var Animation, skip: int): tuple[cam: Camera, scene: Scene] =
 
   let aspect_ratio = anim.ncols / anim.nrows
 
@@ -218,4 +218,5 @@ iterator items(anim: var Animation): tuple[cam: Camera, scene: Scene] =
 
     yield result
 
-    anim.step()
+    for _ in 0 ..< skip:
+      anim.step()

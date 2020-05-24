@@ -15,7 +15,7 @@ proc exportToPPM*(f: File, canvas: Canvas) =
   template conv(c: float64): int =
     int(256 * clamp(c, 0.0, 0.999))
 
-  stdout.write &"P3\n{canvas.ncols} {canvas.nrows}\n255\n"
+  f.write &"P3\n{canvas.ncols} {canvas.nrows}\n255\n"
 
   for i in countdown(canvas.nrows-1,0):
     for j in 0 ..< canvas.ncols:

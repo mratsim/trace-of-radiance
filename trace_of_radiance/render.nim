@@ -48,7 +48,7 @@ func radiance*(ray: Ray, world: Hittable, max_depth: int, rng: var Rng): Color =
   return color(0, 0, 0)
 
 proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: int) =
-  init(Weave)
+
 
   let canvas = canvas.addr # Mutable
   let cam = cam.unsafeAddr # Too big for capture
@@ -68,4 +68,3 @@ proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: in
         pixel += radiance(r, world, max_depth, rng)
       canvas[].draw(row, col, pixel)
 
-  exit(Weave)
