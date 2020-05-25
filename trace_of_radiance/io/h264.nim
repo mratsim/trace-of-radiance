@@ -20,11 +20,11 @@ type
     cursor: int
 
   Frame = ptr object
-    Y: ptr UncheckedArray[byte]
-    Cb, Cr: ptr UncheckedArray[byte]
+    Y: ptr UncheckedArray[uint8]
+    Cb, Cr: ptr UncheckedArray[uint8]
     lumaWidth, lumaHeight: int32
     size: int32
-    buffer: UncheckedArray[byte]
+    buffer: UncheckedArray[uint8]
 
   H264Encoder = object
     sps: seq[byte]
@@ -34,10 +34,30 @@ type
     output: File
     frame: Frame
 
+func `=`(dst: var H264Encoder, src: H264Encoder) {.error: "An H264 encoder cannot be copied, only moved".}
+
 const PPS = [byte 0x00, 0x00, 0x00, 0x01, 0x68, 0xce, 0x38, 0x80]
 const SliceHeader = [byte 0x00, 0x00, 0x00, 0x01, 0x05, 0x88, 0x84, 0x21, 0xa0]
 const MacroblockHeader = [byte 0x0d, 0x00]
 const SliceStopBit = 0x80
+
+# Accessors Pointer arithmetics
+# ------------------------------------------------------
+
+template luma(frame: Frame, x, y: int): uint8 =
+  frame.Y[x * frame.lumaWidth + y]
+
+template chromaB(frame: Frame, x, y: int): uint8 =
+  frame.Cb[x * (frame.lumaWidth shr 1) + y]
+
+template chromaR(frame: Frame, x, y: int): uint8 =
+  frame.Cr[x * (frame.lumaWidth shr 1) + y]
+
+template offset*(p: ptr, bytes: int): ptr =
+  cast[typeof(p)](cast[ByteAddress](p) +% bytes)
+
+# Initialization
+# ------------------------------------------------------
 
 func put(bb: var BitBuffer, n: int, val: uint32) =
   assert (val shr n) == 0, "Value does not fit in the number of bits"
@@ -123,33 +143,6 @@ func initSPS(enc: var H264_Encoder, width, height: int) =
   bb.flush()
   enc.sps.setLen(bb.cursor - bb.shift div 8)
 
-template lumi(frame: Frame, x, y: int): byte =
-  frame.Y[x * frame.lumaWidth + y]
-
-template chromaB(frame: Frame, x, y: int): byte =
-  frame.Cb[x * (frame.lumaWidth shr 1) + y]
-
-template chromaR(frame: Frame, x, y: int): byte =
-  frame.Cr[x * (frame.lumaWidth shr 1) + y]
-
-proc encodeMacroblock(enc: var H264Encoder, i, j: int) =
-
-  if not(i == 0 and j == 0):
-    discard enc.output.writeBytes(MacroblockHeader, 0, MacroblockHeader.len)
-
-  for x in i*16 ..< (i+1) * 16:
-    for y in j*16 ..< (j+1) * 16:
-      enc.output.write char enc.frame.lumi(x, y)
-  for x in i*8 ..< (i+1) * 8:
-    for y in j*8 ..< (j+1) * 8:
-      enc.output.write char enc.frame.chromaB(x, y)
-  for x in i*8 ..< (i+1) * 8:
-    for y in j*8 ..< (j+1) * 8:
-      enc.output.write char enc.frame.chromaR(x, y)
-
-template offset*(p: ptr, bytes: int): ptr =
-  cast[typeof(p)](cast[ByteAddress](p) +% bytes)
-
 proc initialize(frame: var Frame, width, height: int) =
   doAssert frame.isNil
 
@@ -169,9 +162,102 @@ proc initialize(frame: var Frame, width, height: int) =
   frame.size = size.int32
   frame.lumaWidth = width.int32
   frame.lumaHeight = height.int32
-  frame.Y = cast[ptr UncheckedArray[byte]](frame.buffer.addr)
+  frame.Y = cast[ptr UncheckedArray[uint8]](frame.buffer.addr)
   frame.Cb = frame.buffer.addr.offset(width*height)
   frame.Cr = frame.Cb.offset((width div 2)*(height div 2))
+
+proc init*(_: type H264Encoder, width, height: int, output: File): H264Encoder =
+  ## Initialize a H264
+  result.frame.initialize(width = width, height = height)
+  result.initSPS(width = width, height = height)
+  result.output = output
+
+  # Write H264 header
+  discard result.output.writeBytes(result.sps, 0, result.sps.len)
+  discard result.output.writeBytes(PPS, 0, PPS.len)
+
+proc finish*(enc: var H264Encoder) =
+  ## Closes and deallocate the H264Encoder
+  ## This does NOT close the output.
+  enc.frame.deallocShared
+
+# Encoding
+# ------------------------------------------------------
+
+proc encodeMacroblock(enc: var H264Encoder, i, j: int) =
+
+  if not(i == 0 and j == 0):
+    discard enc.output.writeBytes(MacroblockHeader, 0, MacroblockHeader.len)
+
+  for x in i*16 ..< (i+1) * 16:
+    for y in j*16 ..< (j+1) * 16:
+      enc.output.write char enc.frame.luma(x, y)
+  for x in i*8 ..< (i+1) * 8:
+    for y in j*8 ..< (j+1) * 8:
+      enc.output.write char enc.frame.chromaB(x, y)
+  for x in i*8 ..< (i+1) * 8:
+    for y in j*8 ..< (j+1) * 8:
+      enc.output.write char enc.frame.chromaR(x, y)
+
+# API
+# ------------------------------------------------------
+
+func getFrameBuffers*(enc: var H264Encoder): tuple[Y, Cb, Cr: ptr UncheckedArray[uint8]] =
+  ## Return the frame buffers of the encoder
+  ## for zero-copy update of the frame
+  ## Y' is the gamma-corrected luma
+  ## Cb is the chroma blue difference
+  ## Cr is the chroma red difference
+  ##
+  ## Y' is of size width*height
+  ## Cb and Cr are of size width/2 * height/2
+  ##
+  ## i.e. Y'CbCr 420 (horizontal and vertical chroma subsampling)
+  ##
+  ## It is recommended to use BT.601 color matrix for width < 1280
+  ## and BT.709 for width >= 1280 because video players often have this heuristic
+  result.Y = enc.frame.Y
+  result.Cb = enc.frame.Cb
+  result.Cr = enc.frame.Cr
+
+func getFrameBuffer*(enc: var H264Encoder): ptr UncheckedArray[uint8] =
+  ## Return the buffer to the whole frame
+  ## store contiguously Y' then Cb then Cr
+  ##
+  ## Y' is of size width*height
+  ## Cb and Cr are of size width/2 * height/2
+  enc.frame.buffer.addr
+
+func getFrameBufferSize*(enc: var H264Encoder): int32 =
+  ## Return the frame buffer size
+  enc.frame.size
+
+func getWidth*(enc: var H264Encoder): int32 =
+  ## Return the video width
+  ## - The Y' channel has the same width
+  ## - The chroma channel Cb and Cr are half width
+  enc.frame.lumaWidth
+
+func getHeight*(enc: var H264Encoder): int32 =
+  ## Return the video height
+  ## - The Y' channel has the same height
+  ## - The chroma channel Cb and Cr are half height
+  enc.frame.lumaHeight
+
+proc flushFrame*(enc: var H264Encoder) =
+  ## Flush the current buffered frame to the output file
+  ## The frame flushed stay in the buffer and small updates
+  ## can be done before a re-flush
+  discard enc.output.writeBytes(SliceHeader, 0, SliceHeader.len)
+
+  for i in 0 ..< enc.frame.lumaHeight div 16:
+    for j in 0 ..< enc.frame.lumaWidth div 16:
+      enc.encodeMacroblock(i, j)
+
+  enc.output.write char SliceStopBit
+
+# Sanity checks
+# ------------------------------------------------------
 
 when isMainModule:
   import system/ansi_c, stew/byteutils
@@ -180,30 +266,19 @@ when isMainModule:
     importc: "feof", header: "<stdio.h>".}
 
   proc main() =
+    # build/h264 < foo.yuv > foo.264
+
     const LumaWidth = 128
     const LumaHeight = 96
 
-    var enc: H264Encoder
-    enc.frame.initialize(width = LumaWidth, height = LumaHeight)
-
-    enc.initSps(width = LumaWidth, height = LumaHeight)
-
-    enc.output = stdout
-
-    discard enc.output.writeBytes(enc.sps, 0, enc.sps.len)
-    discard enc.output.writeBytes(PPS, 0, PPS.len)
+    var enc = H264Encoder.init(LumaWidth, LumaHeight, stdout)
 
     while stdin.c_feof() == 0:
-      discard stdin.readBuffer(enc.frame.buffer.addr, enc.frame.size)
-      discard stdout.writeBytes(SliceHeader, 0, SliceHeader.len)
+      discard stdin.readBuffer(enc.getFrameBuffer, enc.getFrameBufferSize)
+      enc.flushFrame()
 
-      for i in 0 ..< LumaHeight div 16:
-        for j in 0 ..< LumaWidth div 16:
-          enc.encodeMacroblock(i, j)
-
-      enc.output.write char SliceStopBit
-
-    enc.frame.deallocShared()
+    enc.finish()
+    stdout.close()
     quit 0
 
   main()
