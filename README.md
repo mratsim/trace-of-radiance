@@ -17,10 +17,31 @@ a rendering project (raytracing or otherwise) from scratch, Nim is the best lang
 - approachability & development agility
 
 <p style="text-align: center;">
-  <img width="384" height="216" src="media/in_one_weekend.png">
+  <img width="256" height="144" src="media/animation.gif">
 </p>
 
+## Changelog
+
+The writeup below corresponds to v0.1.0. Since then the following updates (not in Shirley's book) have been made:
+
+- Parallelization via [Weave](https://github.com/mratsim/weave), my own state-of-the-art multithreading runtime.
+  - Rework of the RNG and sampler for parallel Monte-Carlo simulations
+- Simple animation (i.e. no Motion Blur ... yet, only vertical axis, ...)
+  - Simple physics engine that can simulate gravity and bounce
+  - Export animation to series of PPM
+  - Export animation to MP4 video:
+    - RGB to Y'CbCr 420 color conversion (often called YUV)
+    - Poor Man's H264 encoder
+    - MP4 Muxer
+  - ⚠️ Warning: very slow as the engine as no
+    acceleration structures (Bounding Volume Hierarchy, Kd-Trees, ...)
+  - Credits to https://github.com/nwtgck/ray-tracing-iow-scala for the animation idea.
+
+## Table of Contents
+
 - [Trace of Radiance](#trace-of-radiance)
+  - [Changelog](#changelog)
+  - [Table of Contents](#table-of-contents)
   - [Reproducing](#reproducing)
   - [Speed](#speed)
     - [Raytracing in one Weekend](#raytracing-in-one-weekend)
@@ -39,6 +60,7 @@ a rendering project (raytracing or otherwise) from scratch, Nim is the best lang
 ```
 git clone https://github.com/mratsim/trace-of-radiance
 cd trace-of-radiance
+git checkout v0.1.0
 nim c -d:danger --outdir:build trace_of_radiance.nim
 ./build/trace_of_radiance > image.ppm
 ```
@@ -48,6 +70,8 @@ nim c -d:danger --outdir:build trace_of_radiance.nim
 Rendering is an extremely time-consuming task. Nim is fast, very fast, even faster than C++ from time to time.
 
 ### Raytracing in one Weekend
+
+> This applies to v0.1.0 of the repo, the repo has been reworked and in particular adds parallelism.
 
 In the RayTracing in One Weekend first book
 

@@ -6,4 +6,5 @@ description   = "An educational raytracer"
 license       = "MIT or Apache License 2.0"
 
 # Dependencies
-requires "nim >= 1.2.0", "weave"
+requires "nim >= 1.2.0",
+  "weave"
