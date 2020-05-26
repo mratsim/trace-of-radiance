@@ -26,7 +26,7 @@ type
     size: int32
     buffer: UncheckedArray[uint8]
 
-  H264Encoder = object
+  H264Encoder* = object
     sps: seq[byte]
     pps: seq[byte]
     slice_header: seq[byte]
@@ -148,9 +148,11 @@ proc initialize(frame: var Frame, width, height: int) =
 
   # 3 channels, Luma full size
   # and Chroma half size
-  let size = width*height +
-             (width div 2)*(height div 2) +
-             (width div 2)*(height div 2)
+  let fullSized = width*height
+  let halfSized = ((width+1) shr 1)*((height+1) shr 1)
+  let size = fullSized +
+             halfSized +
+             halfSized
 
   frame = cast[Frame](
       allocShared0(
@@ -163,8 +165,8 @@ proc initialize(frame: var Frame, width, height: int) =
   frame.lumaWidth = width.int32
   frame.lumaHeight = height.int32
   frame.Y = cast[ptr UncheckedArray[uint8]](frame.buffer.addr)
-  frame.Cb = frame.buffer.addr.offset(width*height)
-  frame.Cr = frame.Cb.offset((width div 2)*(height div 2))
+  frame.Cb = frame.buffer.addr.offset(fullSized)
+  frame.Cr = frame.Cb.offset(halfSized)
 
 proc init*(_: type H264Encoder, width, height: int, output: File): H264Encoder =
   ## Initialize a H264
@@ -175,6 +177,8 @@ proc init*(_: type H264Encoder, width, height: int, output: File): H264Encoder =
   # Write H264 header
   discard result.output.writeBytes(result.sps, 0, result.sps.len)
   discard result.output.writeBytes(PPS, 0, PPS.len)
+
+  # TODO cropping for non-multiple of 16
 
 proc finish*(enc: var H264Encoder) =
   ## Closes and deallocate the H264Encoder
@@ -225,7 +229,7 @@ func getFrameBuffer*(enc: var H264Encoder): ptr UncheckedArray[uint8] =
   ## store contiguously Y' then Cb then Cr
   ##
   ## Y' is of size width*height
-  ## Cb and Cr are of size width/2 * height/2
+  ## Cb and Cr are of size (width+1)/2 * (height+1)/2 (i.e. half size rounded up)
   enc.frame.buffer.addr
 
 func getFrameBufferSize*(enc: var H264Encoder): int32 =

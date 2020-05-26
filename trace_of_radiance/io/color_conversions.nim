@@ -131,10 +131,27 @@ func initChannelDesc*[T](buffer: var T, width: SomeInteger,
   else:
     result.stride = int32 width
 
-func initChannelDesc*[T](buffer: (ptr T) or (ptr UncheckedArray[T]),
+func initChannelDesc*[T](buffer: ptr UncheckedArray[T],
                                width: SomeInteger,
                                subsampled: static bool
                               ): ChannelDescriptor[T] {.inline.}=
+  ## Create a descriptor for a color channel.
+  ## Use subsampled == true for a subsambpled channel
+  ## Assumes that images are stored with "width" laid out contiguously
+  ##
+  ## Note: ensure that the buffer lifetime is greater than
+  ## the color conversion routines.
+  result.buffer = buffer
+  when subsampled:
+    result.stride = int32 (width+1) div 2
+  else:
+    result.stride = int32 width
+
+func initChannelDesc*[T: not UncheckedArray](
+        buffer: ptr T,
+        width: SomeInteger,
+        subsampled: static bool
+     ): ChannelDescriptor[T] {.inline.}=
   ## Create a descriptor for a color channel.
   ## Use subsampled == true for a subsambpled channel
   ## Assumes that images are stored with "width" laid out contiguously
@@ -160,7 +177,7 @@ const RGB_YCbCr_Coefs = [
     BT601: compute_RGB_to_YCbCr_Coefs(0.299, 0.114, 16.0, 235.0, 240.0-16.0)
   ]
 
-func rgbRaw_to_ycbcr420(
+func rgbRaw_to_ycbcr420*(
        width, height: int32,
        rgb: ChannelDescriptor[RGB_Concept],
        luma: ChannelDescriptor[uint8],

@@ -125,11 +125,10 @@ proc writeToFile(
   return cint(bytesWritten.csize_t != size)
 {.pop.}
 
-proc writeMP4*(
+proc writeMP4_from*(
        self: var MP4Muxer,
        src: string
      ) =
-  echo src
   let buffer = src.readFile()
   self.writer.write_mp4(
     fps = 30,
@@ -180,7 +179,7 @@ when isMainModule:
 
     var mP4Muxer: MP4Muxer
     let dst = open(destination, fmWrite)
-    mP4Muxer.initialize(dst, 128, 96)
+    mP4Muxer.initialize(dst, 576, 324)
     mP4Muxer.writeMP4(source)
     mP4Muxer.close()
     dst.close()
