@@ -9,15 +9,17 @@ import
   # Stdlib
   std/math,
   # Internal
-  ./vec3s, ./point3s
+  ./vec3s, ./point3s, ./time
 
 type Ray* = object
   origin*: Point3
   direction*: Vec3
+  time*: Time
 
-func ray*(origin: Point3, direction: Vec3): Ray {.inline.} =
+func ray*(origin: Point3, direction: Vec3, time = Time(0.0)): Ray {.inline.} =
   result.origin = origin
   result.direction = direction
+  result.time = time
 
 func at*(ray: Ray, t: float64): Point3 {.inline.} =
   ray.origin + t * ray.direction

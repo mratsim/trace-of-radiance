@@ -25,7 +25,7 @@ func scatter(self: Lambertian, r_in: Ray,
               rec: HitRecord, rng: var Rng,
               attenuation: var Attenuation, scattered: var Ray): bool =
   let scatter_direction = rec.normal + rng.random(UnitVector)
-  scattered = ray(rec.p, scatter_direction)
+  scattered = ray(rec.p, scatter_direction, r_in.time)
   attenuation = self.albedo
   return true
 

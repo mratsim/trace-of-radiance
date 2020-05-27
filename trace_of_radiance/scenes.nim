@@ -29,7 +29,11 @@ func random_scene*(rng: var Rng): Scene =
           # Diffuse
           let albedo = rng.random(Attenuation) * rng.random(Attenuation)
           let sphere_material = lambertian albedo
-          result.add sphere(center, 0.2, sphere_material)
+          let center2 = center + vec3(0, rng.random(float64, 0.5), 0)
+          result.add movingSphere(
+                       center, 0.0.Time,
+                       center2, 1.0.Time,
+                       0.2, sphere_material)
         elif choose_mat < 0.95:
           # Metal
           let albedo = rng.random(Attenuation, 0.5, 1)

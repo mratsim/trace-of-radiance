@@ -17,7 +17,7 @@ a rendering project (raytracing or otherwise) from scratch, Nim is the best lang
 - approachability & development agility
 
 <p style="text-align: center;">
-  <img width="256" height="144" src="media/animation.gif">
+  <img width="256" height="144" src="media/book1_animation.gif">
 </p>
 
 ## Changelog

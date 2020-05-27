@@ -40,7 +40,7 @@ import
   ../../support/emulate_classes_with_ADTs,
   ../../primitives,
   ../core,
-  ./spheres
+  ./spheres, ./moving_spheres
 
 # Hittables
 # -----------------------------------------------------
@@ -49,6 +49,7 @@ import ./spheres
 
 declareClass(HittableVariant)
 registerSubType(HittableVariant, Sphere)
+registerSubType(HittableVariant, MovingSphere)
 registerRoutine(HittableVariant):
   func hit*(self: HittableVariant, r: Ray, t_min, t_max: float64, rec: var HitRecord): bool {.inline.}
 

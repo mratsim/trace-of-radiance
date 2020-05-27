@@ -13,7 +13,6 @@ import
   # Internal
   ./primitives,
   ./sampling,
-  ./io/ppm,
   ./physics/[core, hittables, cameras, materials]
 
 # Rendering routines
@@ -67,4 +66,3 @@ proc render*(canvas: var Canvas, cam: Camera, world: HittableList, max_depth: in
         let r = cam[].ray(u, v, rng)
         pixel += radiance(r, world, max_depth, rng)
       canvas[].draw(row, col, pixel)
-

@@ -8,10 +8,10 @@
 import primitives/[
   safe_math, rays,
   vec3s, point3s, colors,
-  canvas
+  canvas, time
 ]
 
 export
   safe_math, rays,
   vec3s, point3s, colors,
-  canvas
+  canvas, time

@@ -7,7 +7,7 @@
 
 import
   # Stdlib
-  std/[strformat, math, os, strutils],
+  std/[strformat, os, strutils],
   # internal
   ../primitives
 

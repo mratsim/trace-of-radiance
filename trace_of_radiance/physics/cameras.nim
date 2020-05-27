@@ -19,10 +19,12 @@ type Camera* = object
   vertical: Vec3
   u, v, w: Vec3   # Orthonormal basis that describe camera orientation
   lens_radius: float64
+  shutterOpen, shutterClose: Time
 
 func camera*(lookFrom, lookAt: Point3, view_up: Vec3,
              vertical_field_of_view: Degrees, aspect_ratio: float64,
-             aperture, focus_distance: float64
+             aperture, focus_distance: float64,
+             shutterOpen, shutterClose = Time(0.0)
             ): Camera =
   let theta = vertical_field_of_view.degToRad()
   let h = tan(theta/2.0)
@@ -39,6 +41,8 @@ func camera*(lookFrom, lookAt: Point3, view_up: Vec3,
   result.lower_left_corner = result.origin - result.horizontal/2 -
                              result.vertical/2 - focus_distance*result.w
   result.lens_radius = aperture/2
+  result.shutterOpen = shutterOpen
+  result.shutterClose = shutterClose
 
 func ray*(self: Camera, s, t: float64, rng: var Rng): Ray =
   let rd = self.lens_radius * rng.random_in_unit_disk(Vec3)
@@ -48,5 +52,6 @@ func ray*(self: Camera, s, t: float64, rng: var Rng): Ray =
     direction = self.lower_left_corner +
                   s*self.horizontal +
                   t*self.vertical -
-                  self.origin - offset
+                  self.origin - offset,
+    time = rng.random(float64, self.shutterOpen, self.shutterClose)
   )

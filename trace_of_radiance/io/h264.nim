@@ -5,9 +5,7 @@
 #   * Apache v2 license (license terms in the root directory or at http://www.apache.org/licenses/LICENSE-2.0).
 # at your option. This file may not be copied, modified, or distributed except according to those terms.
 
-import std/[os, endians]
-
-import strutils
+import std/endians
 
 # A hacky H264 lossless encoder
 # ------------------------------------------------------
@@ -264,7 +262,7 @@ proc flushFrame*(enc: var H264Encoder) =
 # ------------------------------------------------------
 
 when isMainModule:
-  import system/ansi_c, stew/byteutils
+  import system/[os, ansi_c]
 
   proc c_feof(f: File): cint {.
     importc: "feof", header: "<stdio.h>".}

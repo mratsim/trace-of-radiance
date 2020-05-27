@@ -14,27 +14,30 @@ import
     cameras, core
   ],
   ./sampling,
-  ./primitives,
-  ./render,
-  ./io/ppm
+  ./primitives
 
-# Animated scene
+# Animated scene from book 1
 # ------------------------------------------------------------------------
 # Experimental physics ;)
 # No lateral move, deformation, motion blur, ...
 #
 # For now separate from the rest as not in the book
 # Reference: https://github.com/nwtgck/ray-tracing-iow-scala
+#
+# Note: This is only based on the first book
+#       hence does not use the introduced moving spheres
+#       or motion blur.
 
 type
   # I can't do physics without checking units
   Mass = distinct float32
   Velocity = distinct float64
   Distance = distinct float64
-  Time* = distinct float32
+  ATime* = distinct float32    # Avoid conflict with the Time unit introduced in book 2
   Acceleration = distinct float64
 
   MovingSphere = object
+    ## Import those are NOT the MovingSpheres from book2
     # Movement mutable
     velocity: Velocity
     pos_y: Distance
@@ -53,11 +56,11 @@ type
     gamma_correction*: float32
 
     # Time constants
-    dt: Time
-    t_min, t_max: Time
+    dt: ATime
+    t_min, t_max: ATime
 
     # Time dependent
-    t: Time
+    t: ATime
     lookFromAngle: Radians
     movingSpheres: seq[MovingSphere]
 
@@ -72,14 +75,14 @@ func `+=`(a: var Distance, b: Distance) {.inline.}=
 func `-=`(a: var Velocity, b: Velocity) {.inline.}=
   cast[var float64](a.addr) -= b.float64
 
-func `+=`(a: var Time, b: Time) {.inline.}=
+func `+=`(a: var ATime, b: ATime) {.inline.}=
   cast[var float32](a.addr) += b.float32
-template `<`(a, b: Time): bool =
+template `<`(a, b: ATime): bool =
   a.float32 < b.float32
 
-template `*`(accel: Acceleration, dt: Time): Velocity =
+template `*`(accel: Acceleration, dt: ATime): Velocity =
   Velocity(accel.float64 * dt.float64)
-template `*`(v: Velocity, dt: Time): Distance =
+template `*`(v: Velocity, dt: ATime): Distance =
   Distance(v.float64 * dt.float64)
 template `*`(k: float64, v: Velocity): Velocity =
   Velocity(k * v.float64)
@@ -87,7 +90,7 @@ template `*`(k: float64, v: Velocity): Velocity =
 func random_moving_spheres*(
        rng: var Rng,
        height, width: int32,
-       dt, t_min, t_max: Time
+       dt, t_min, t_max: ATime
      ): Animation =
 
   result.nrows = height
@@ -96,7 +99,7 @@ func random_moving_spheres*(
   result.t_min = t_min
   result.t_max = t_max
 
-  result.t = 0.Time
+  result.t = 0.ATime
   result.lookFromAngle = Radians(2 * PI)
 
   for a in -20 ..< 20:
