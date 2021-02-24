@@ -236,7 +236,7 @@ Nim does the Right Thing™ and will pass by reference by default
 
 ### Tracking side-effects
 
-Nim functions can be declared as (or with, depends on what you mean here) `proc` or `func`.
+Nim functions can be declared with `proc` or `func`.
 
 A `func` enforces the absence of side-effect or the code will not compile. For example:
 - (non-deterministic) random functions
