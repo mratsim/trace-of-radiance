@@ -28,12 +28,12 @@ The writeup below corresponds to v0.1.0. Since then the following updates (not i
   - Rework of the RNG and sampler for parallel Monte-Carlo simulations
 - Simple animation (i.e. no Motion Blur ... yet, only vertical axis, ...)
   - Simple physics engine that can simulate gravity and bounce
-  - Export animation to series of PPM
-  - Export animation to MP4 video:
+  - Exports animation to PPM series 
+  - Exports animation to MP4 file format:
     - RGB to Y'CbCr 420 color conversion (often called YUV)
     - Poor Man's H264 encoder
     - MP4 Muxer
-  - ⚠️ Warning: very slow as the engine as no
+  - ⚠️ Warning: very slow since the engine has no
     acceleration structures (Bounding Volume Hierarchy, Kd-Trees, ...)
   - Credits to https://github.com/nwtgck/ray-tracing-iow-scala for the animation idea.
 
@@ -122,7 +122,7 @@ Multithreaded Nim via Weave is 11.1% faster Clang C++.
 Nim is one of the few languages that can properly model physics units
 and enforce proper usage of those units at compile-time.
 
-For example, a vector and a unit vector have the same representation bu are are distinct types. Unit vectors
+For example, a vector and an unit vector have the same representation but are are distinct types. Unit vectors
 are auto-convertible to vectors when passed to a function:
 
 ```Nim
@@ -150,9 +150,9 @@ func `*`*(scalar: float64, a: Point3): Point3 {.borrow.}
 ```
 
 Also:
-- substracting 2 points gives a vector,
-- adding a vector to a point gives a point,
-- adding 2 points is disallowed, with an nice custom error message instead of the compiler default errors.
+- Substracting 2 points gives a vector,
+- Adding a vector to a point gives a point,
+- Adding 2 points is disallowed, with a nice custom error message instead of the compiler default errors.
 
 ```Nim
 func `-`*(a, b: Point3): Vec3 {.inline.}=
@@ -236,7 +236,7 @@ Nim does the Right Thing™ and will pass by reference by default
 
 ### Tracking side-effects
 
-Nim functions can be declared `proc` or `func`.
+Nim functions can be declared as (or with, depends on what you mean here) `proc` or `func`.
 
 A `func` enforces the absence of side-effect or the code will not compile. For example:
 - (non-deterministic) random functions
@@ -257,14 +257,14 @@ In particular template metaprogramming has a low low low compilation-time cost.
 Nim is the language with the widest support for compile-time metaprogramming, including dependently-typed languages.
 
 This is supported by a fast VM that gives Nim the speed of Python at compile-time and is used for:
-- writing domain specific languages
-  - state machine generators
-  - seamless multidimensional arrays uses, including Einstein summation
-  - shader generators
+- Writing domain specific languages
+  - State machine generators
+  - Seamless multidimensional arrays uses, including Einstein summation
+  - Shader generators
   - SIMD kernel generators
   - ...
-- compile-time precomputations
-- buffers, vectors, matrices parametrized by integer generics
+- Sompile-time precomputations
+- Buffers, vectors, matrices parametrized by integer generics
 
 ## C and C++ interop
 
@@ -280,9 +280,9 @@ For example, bindings to SFML, from the Nim website features
 
 While Nim offers many advanced features, it does not force you to swim or drown
 on first approach.\
-Actually many have reported that Nim felt like a compiled scripting language.
+Actually many people have reported that Nim felt like a compiled scripting language.
 
 ## Caveats
 
-Not all is ponies and rainbows, Nim main issue is that it is a very young language with a small ecosystem of support libraries.
-That said, you can reuse the C and C++ ecosystem (and Javascript as well since Nim can also compile to it)
+Not all is ponies and rainbows, Nim's main issue is that it is a very young language with a small ecosystem of support libraries.
+That said, you can reuse the C and C++ ecosystem (and Javascript as well since Nim can also compile to it).
