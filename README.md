@@ -122,7 +122,7 @@ Multithreaded Nim via Weave is 11.1% faster Clang C++.
 Nim is one of the few languages that can properly model physics units
 and enforce proper usage of those units at compile-time.
 
-For example, a vector and an unit vector have the same representation but are are distinct types. Unit vectors
+For example, a vector and an unit vector have the same representation but are distinct types. Unit vectors
 are auto-convertible to vectors when passed to a function:
 
 ```Nim
