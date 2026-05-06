@@ -7,7 +7,7 @@
 
 import
   # Stdlib
-  ./math,
+  std/math,
   # Internals
   ./physics/[
     hittables, materials,

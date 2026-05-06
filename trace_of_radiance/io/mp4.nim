@@ -19,6 +19,7 @@ const
 # C API
 # ------------------------------------------------------
 
+type c_constvoidptr {.importc: "const void*", header: "<stddef.h>".} = object
 type
   mp4_h26x_writer_t {.minimp4.} = object
   MP4E_mux_t {.minimp4.} = object
@@ -49,12 +50,12 @@ proc MP4E_open(
        sequential_mod_flag: cint,
        enable_fragmentation: cint,
        token: pointer,
-       write_callback: proc(
-         offset: int64,
-         buffer: pointer,
-         size: csize_t,
-         token: pointer
-       ): cint{.cdecl, gcsafe.}
+        write_callback: proc(
+          offset: int64,
+          buffer: c_constvoidptr,
+          size: csize_t,
+          token: pointer
+        ): cint{.cdecl, gcsafe.}
      ): ptr MP4E_mux_t {.minimp4, noDecl.}
 
 proc MP4E_close(mux: ptr MP4E_mux_t) {.minimp4, noDecl.}
@@ -115,13 +116,13 @@ proc close*(m: var MP4Muxer) =
 {.push stackTrace: off.}
 proc writeToFile(
        offset: int64,
-       buffer: pointer,
+       buffer: c_constvoidptr,
        size: csize_t,
        token: pointer
      ): cint {.cdecl, gcsafe.} =
   let file = cast[File](token)
   file.setFilePos(offset)
-  let bytesWritten = file.writeBuffer(buffer, size)
+  let bytesWritten = file.writeBuffer(cast[pointer](buffer), size)
   return cint(bytesWritten.csize_t != size)
 {.pop.}
 
